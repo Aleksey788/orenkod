@@ -7,67 +7,75 @@ use App\Models\RankApplication;
 
 class RankApplicationController extends Controller
 {
-    // 1. Посмотреть список всех заявок на разряды (для федерации или отчетов)
+    // 1. Получить список заявок на разряды (с фильтрами по спортсмену или статусу)
     public function index(Request $request)
     {
-        $applications = RankApplication::all();
+        $query = RankApplication::query();
+
+        if ($request->has('athlete_id')) {
+            $query->where('athlete_id', $request->athlete_id);
+        }
+
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $applications = $query->with(['athlete'])->get();
 
         return response()->json([
             'success' => true,
-            'data' => $applications
+            'data'    => $applications
         ], 200);
     }
 
-    // 2. Подать заявку на присвоение/подтверждение спортивного разряда (спортсмен / тренер)
+    // 2. Подать заявку на присвоение спортивного разряда (Спортсмен / Тренер)
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'athlete_id'     => 'required|integer',
-            'rank_name'      => 'required|string|max:100', // например: "1 разряд", "КМС", "МС"
-            'competition_id' => 'required|integer', // соревнование-основание
-            'document_path'  => 'nullable|string', // скан протокола или справки
+            'athlete_id'       => 'required|integer|exists:athletes,id',
+            'rank_name'        => 'required|string|max:100', // например: "1 спортивный разряд", "КМС"
+            'competition_name' => 'nullable|string|max:255', // турнир, на котором выполнен нормативы
+            'document_url'     => 'nullable|string|max:255', // ссылка на протокол / подтверждающий документ
         ]);
 
-        $application = RankApplication::create([
-            'athlete_id'     => $validated['athlete_id'],
-            'rank_name'      => $validated['rank_name'],
-            'competition_id' => $validated['competition_id'],
-            'document_path'  => $validated['document_path'] ?? null,
-            'status'         => 'pending', // статус по умолчанию: на рассмотрении
-            'submitted_date' => now()->toDateString(),
+        $rankApp = RankApplication::create([
+            'athlete_id'       => $validated['athlete_id'],
+            'rank_name'        => $validated['rank_name'],
+            'competition_name' => $validated['competition_name'] ?? null,
+            'document_url'     => $validated['document_url'] ?? null,
+            'status'           => 'pending', // на рассмотрении
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Заявка на спортивный разряд успешно подана.',
-            'data'    => $application
+            'data'    => $rankApp
         ], 201);
     }
 
-    // 3. Одобрить или отклонить заявку на разряд
+    // 3. Изменить статус заявки и указать номер приказа (Федерация)
     public function updateStatus(Request $request, $id)
     {
-        $validated = $request->validate([
-            'status' => 'required|in:approved,rejected,pending',
-        ]);
+        $rankApp = RankApplication::find($id);
 
-        $application = RankApplication::find($id);
-
-        if (!$application) {
+        if (!$rankApp) {
             return response()->json([
                 'success' => false,
-                'message' => 'Заявка на разряд не найдена.'
+                'message' => 'Заявка не найдена.'
             ], 404);
         }
 
-        $application->update([
-            'status' => $validated['status']
+        $validated = $request->validate([
+            'status'       => 'required|in:approved,rejected,pending',
+            'order_number' => 'nullable|string|max:100', // Номер приказа о присвоении разряда
         ]);
+
+        $rankApp->update($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Статус заявки успешно изменен.',
-            'data'    => $application
+            'message' => 'Статус заявки на разряд успешно обновлен.',
+            'data'    => $rankApp
         ], 200);
     }
 }

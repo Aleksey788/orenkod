@@ -7,70 +7,67 @@ use App\Models\Application;
 
 class ApplicationController extends Controller
 {
-    // 1. Посмотреть список всех заявок 
+    // 1. Получить список заявок (с фильтрами по соревнованию, спортсмену или статусу)
     public function index(Request $request)
     {
         $query = Application::query();
 
-        // Если передан фильтр по спортсмену (?athlete_id=5)
+        if ($request->has('competition_id')) {
+            $query->where('competition_id', $request->competition_id);
+        }
+
         if ($request->has('athlete_id')) {
             $query->where('athlete_id', $request->athlete_id);
         }
 
-        // Если передан фильтр по статусу (?status=pending)
         if ($request->has('status')) {
             $query->where('status', $request->status);
         }
 
-        $applications = $query->get();
+        $applications = $query->with(['competition', 'athlete'])->get();
 
         return response()->json([
             'success' => true,
-            'data' => $applications
+            'data'    => $applications
         ], 200);
     }
 
-    // 2. Подать новую заявку на соревнование 
+    // 2. Подать заявку на соревнование (Спортсмен)
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'athlete_id'     => 'required|integer',
-            'competition_id' => 'required|integer',
+            'competition_id' => 'required|integer|exists:competitions,id',
+            'athlete_id'     => 'required|integer|exists:athletes,id',
         ]);
 
-        // Проверяем, не была ли заявка подана ранее
-        $existing = Application::where('athlete_id', $validated['athlete_id'])
-            ->where('competition_id', $validated['competition_id'])
-            ->first();
+        // Проверяем, не подавал ли этот спортсмен заявку на этот же турнир ранее
+        $exists = Application::where('competition_id', $validated['competition_id'])
+            ->where('athlete_id', $validated['athlete_id'])
+            ->exists();
 
-        if ($existing) {
+        if ($exists) {
             return response()->json([
                 'success' => false,
-                'message' => 'Заявка на это соревнование уже подана.'
+                'message' => 'Вы уже подали заявку на это соревнование.'
             ], 422);
         }
 
         $application = Application::create([
-            'athlete_id'     => $validated['athlete_id'],
             'competition_id' => $validated['competition_id'],
+            'athlete_id'     => $validated['athlete_id'],
             'status'         => 'pending', // Статус по умолчанию: на рассмотрении
-            'submitted_date' => now()->toDateString(),
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Заявка успешно создана.',
+            'message' => 'Заявка успешно подана и отправлена на модерацию.',
             'data'    => $application
         ], 201);
     }
 
-    // 3. Изменить статус заявки
+    // 3. Изменить статус заявки (Одобрить или отклонить — для Федерации)
     public function updateStatus(Request $request, $id)
     {
-        $validated = $request->validate([
-            'status' => 'required|in:approved,rejected,pending',
-        ]);
-
         $application = Application::find($id);
 
         if (!$application) {
@@ -80,13 +77,17 @@ class ApplicationController extends Controller
             ], 404);
         }
 
+        $validated = $request->validate([
+            'status' => 'required|in:approved,rejected,pending',
+        ]);
+
         $application->update([
             'status' => $validated['status']
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Статус заявки успешно изменен.',
+            'message' => 'Статус заявки успешно обновлен.',
             'data'    => $application
         ], 200);
     }
