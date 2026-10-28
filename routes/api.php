@@ -32,7 +32,7 @@ Route::get('/organizations', [OrganizationController::class, 'index']);
 Route::get('/athletes', [AthleteController::class, 'index']);
 Route::get('/athletes/{id}', [AthleteController::class, 'show']);
 Route::get('/ratings', [RatingController::class, 'index']);
-Route::get('/rating/leaderboard', [ResultController::class, 'getLeaderboard']);
+Route::get('/leaderboard', [ResultController::class, 'getLeaderboard']);
 Route::get('/competitions/{competitionId}/results', [ResultController::class, 'getByCompetition']);
 Route::get('/competitions/{competitionId}/judges', [JudgeController::class, 'getByCompetition']);
 
@@ -61,8 +61,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/rank-applications/{id}/status', [RankApplicationController::class, 'updateStatus']);
 
     // Тренеры и спортсмены
-    Route::post('/coach-links', [CoachLinkController::class, 'store']);
-    Route::put('/coach-links/{id}/status', [CoachLinkController::class, 'updateStatus']);
+    Route::post('/coach/athletes/link', [CoachLinkController::class, 'store']);
+    Route::put('/athlete/coach/confirm/{id}', [CoachLinkController::class, 'updateStatus']);
 
     // Судейство
     Route::get('/judges', [JudgeController::class, 'index']);
@@ -77,6 +77,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Рейтинги и сборная (управление)
     Route::post('/ratings/team-order', [RatingController::class, 'generateTeamOrder']);
 
-    // Внесение результатов (Судья / Федерация)
     Route::post('/results', [ResultController::class, 'storeOrUpdate']);
+    Route::get('/leaderboard', [ResultController::class, 'getLeaderboard']);
 });

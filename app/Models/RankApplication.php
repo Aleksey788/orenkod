@@ -2,8 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
 class RankApplication extends Model
 {
+    use HasFactory;
+
     protected $table = 'rank_applications';
 
     protected $fillable = [
@@ -19,10 +24,23 @@ class RankApplication extends Model
         'rejection_reason',
     ];
 
-    public function athlete() { return $this->belongsTo(Athlete::class); }
-    public function sportRank() { return $this->belongsTo(SportRank::class); }
-    public function discipline() { return $this->belongsTo(Discipline::class); }
-    public function competitionResult() { return $this->belongsTo(CompetitionResult::class); }
-    public function submitter() { return $this->belongsTo(User::class, 'submitted_by_user_id'); }
-    public function reviewer() { return $this->belongsTo(User::class, 'reviewed_by_user_id'); }
+    public function athlete()
+    {
+        return $this->belongsTo(Athlete::class);
+    }
+
+    public function sportRank()
+    {
+        return $this->belongsTo(SportRank::class);
+    }
+
+    public function discipline()
+    {
+        return $this->belongsTo(Discipline::class);
+    }
+
+    public function competitionResult()
+    {
+        return $this->belongsTo(CompetitionResult::class);
+    }
 }

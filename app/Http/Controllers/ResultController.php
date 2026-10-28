@@ -9,13 +9,14 @@ use Illuminate\Support\Facades\DB;
 
 class ResultController extends Controller
 {
-    // 1. Получить результаты конкретного соревнования (для протокола)
+    // 1. Получить результаты конкретного соревнования (официальный протокол)
     public function getByCompetition($competitionId)
     {
-        $results = CompetitionResult::where('competition_id', $competitionId)
-            ->with(['athlete.user'])
-            ->orderBy('place', 'asc')
-            ->get();
+        $results = CompetitionResult::whereHas('application', function ($query) use ($competitionId) {
+            $query->where('competition_id', $competitionId);
+        })->with(['application.athlete.user', 'application.athlete.organization'])
+          ->orderBy('place', 'asc')
+          ->get();
 
         return response()->json([
             'success' => true,
@@ -23,55 +24,51 @@ class ResultController extends Controller
         ], 200);
     }
 
-    // 2. Внести или обновить результаты соревнования (для судьи или члена федерации)
+    // 2. Внести или обновить результат участника (Федерация / Судья)
     public function storeOrUpdate(Request $request)
     {
         $validated = $request->validate([
-            'competition_id' => 'required|integer|exists:competitions,id',
-            'results'        => 'required|array',
-            'results.*.athlete_id' => 'required|integer|exists:athletes,id',
-            'results.*.place'      => 'required|integer|min:1',
-            'results.*.points'     => 'required|numeric|min:0',
-            'results.*.score'      => 'nullable|string|max:100', // например: "100 баллов", "10/10 задач"
+            'competition_application_id' => 'required|integer|exists:competition_applications,id',
+            'place'                      => 'nullable|integer|min:1',
+            'score'                      => 'nullable|numeric',
+            'status'                     => 'nullable|string|max:30',
+            'notes'                      => 'nullable|string',
         ]);
 
-        $competitionId = $validated['competition_id'];
-
-        DB::transaction(function () use ($competitionId, $validated) {
-            foreach ($validated['results'] as $res) {
-                CompetitionResult::updateOrCreate(
-                    [
-                        'competition_id' => $competitionId,
-                        'athlete_id'     => $res['athlete_id'],
-                    ],
-                    [
-                        'place'  => $res['place'],
-                        'points' => $res['points'],
-                        'score'  => $res['score'] ?? null,
-                    ]
-                );
-            }
-        });
+        $result = CompetitionResult::updateOrCreate(
+            ['competition_application_id' => $validated['competition_application_id']],
+            [
+                'place'              => $validated['place'] ?? null,
+                'score'              => $validated['score'] ?? null,
+                'status'             => $validated['status'] ?? 'ranked',
+                'notes'              => $validated['notes'] ?? null,
+                'entered_by_user_id' => $request->user()?->id,
+            ]
+        );
 
         return response()->json([
             'success' => true,
-            'message' => 'Результаты соревнования успешно внесены и сохранены.'
+            'message' => 'Результат успешно сохранен.',
+            'data'    => $result
         ], 200);
     }
 
-    // 3. Автоматический расчет рейтинга спортсменов (Топ лучших по сумме баллов)
+    // 3. Автоматический расчет общего лидерборда (Топ лучших по сумме баллов)
     public function getLeaderboard(Request $request)
     {
         $limit = $request->get('limit', 10);
 
-        $leaderboard = CompetitionResult::select(
-                'athlete_id',
-                DB::raw('SUM(points) as total_points'),
-                DB::raw('COUNT(competition_id) as total_competitions')
+        $leaderboard = Athlete::select(
+                'athletes.*',
+                DB::raw('SUM(competition_results.score) as total_points'),
+                DB::raw('COUNT(competition_applications.id) as total_competitions')
             )
-            ->groupBy('athlete_id')
+            ->join('competition_applications', 'athletes.id', '=', 'competition_applications.athlete_id')
+            ->join('competition_results', 'competition_applications.id', '=', 'competition_results.competition_application_id')
+            ->where('competition_applications.status', 'approved')
+            ->groupBy('athletes.id')
             ->orderByDesc('total_points')
-            ->with(['athlete.user', 'athlete.organization'])
+            ->with(['user', 'organization'])
             ->take($limit)
             ->get();
 

@@ -3,18 +3,28 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Result;
+use App\Models\Athlete;
+use Illuminate\Support\Facades\DB;
 
 class RatingController extends Controller
 {
-    // 1. Получить актуальный рейтинг спортсменов (для таблицы на фронтенде)
+    // 1. Получить актуальный рейтинг спортсменов
     public function index(Request $request)
     {
-        // Суммируем баллы спортсменов по всем результатам и сортируем по убыванию
-        $ratings = Result::select('athlete_id')
-            ->selectRaw('SUM(points) as total_points, COUNT(competition_id) as competitions_count')
-            ->groupBy('athlete_id')
+        $limit = $request->get('limit', 10);
+
+        $ratings = Athlete::select(
+                'athletes.*',
+                DB::raw('SUM(competition_results.score) as total_points'),
+                DB::raw('COUNT(competition_applications.id) as competitions_count')
+            )
+            ->join('competition_applications', 'athletes.id', '=', 'competition_applications.athlete_id')
+            ->join('competition_results', 'competition_applications.id', '=', 'competition_results.competition_application_id')
+            ->where('competition_applications.status', 'approved')
+            ->groupBy('athletes.id')
             ->orderByDesc('total_points')
+            ->with(['user', 'organization'])
+            ->take($limit)
             ->get();
 
         return response()->json([
@@ -28,18 +38,24 @@ class RatingController extends Controller
     {
         $validated = $request->validate([
             'discipline_id' => 'required|integer',
-            'limit'         => 'nullable|integer', // количество человек в сборной (по умолчанию топ-10)
+            'limit'         => 'nullable|integer',
         ]);
 
         $limit = $validated['limit'] ?? 10;
 
-        // Выбираем топ спортсменов с наибольшей суммой баллов в выбранной дисциплине
-        $topAthletes = Result::where('discipline_id', $validated['discipline_id'])
-            ->select('athlete_id')
-            ->selectRaw('SUM(points) as total_points')
-            ->groupBy('athlete_id')
+        $topAthletes = Athlete::select(
+                'athletes.*',
+                DB::raw('SUM(competition_results.score) as total_points')
+            )
+            ->join('competition_applications', 'athletes.id', '=', 'competition_applications.athlete_id')
+            ->join('competition_results', 'competition_applications.id', '=', 'competition_results.competition_application_id')
+            ->join('competitions', 'competition_applications.competition_id', '=', 'competitions.id')
+            ->where('competitions.discipline_id', $validated['discipline_id'])
+            ->where('competition_applications.status', 'approved')
+            ->groupBy('athletes.id')
             ->orderByDesc('total_points')
-            ->limit($limit)
+            ->with(['user', 'organization'])
+            ->take($limit)
             ->get();
 
         return response()->json([

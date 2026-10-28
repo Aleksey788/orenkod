@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\CoachAthlete; // название модели под структуру напарника
+use App\Models\CoachAthlete;
 
 class CoachLinkController extends Controller
 {
@@ -11,15 +11,17 @@ class CoachLinkController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'coach_id'   => 'required|integer|exists:users,id',
-            'athlete_id' => 'required|integer|exists:athletes,id',
-            'status'     => 'nullable|in:pending,active,rejected',
+            'coach_id'      => 'required|integer|exists:coaches,id',
+            'athlete_id'    => 'required|integer|exists:athletes,id',
+            'discipline_id' => 'required|integer|exists:disciplines,id', // Требуем дисциплину
+            'status'        => 'nullable|in:pending,active,rejected',
         ]);
 
         $link = CoachAthlete::create([
-            'coach_id'   => $validated['coach_id'],
-            'athlete_id' => $validated['athlete_id'],
-            'status'     => $validated['status'] ?? 'pending',
+            'coach_id'      => $validated['coach_id'],
+            'athlete_id'    => $validated['athlete_id'],
+            'discipline_id' => $validated['discipline_id'],
+            'status'        => $validated['status'] ?? 'pending',
         ]);
 
         return response()->json([

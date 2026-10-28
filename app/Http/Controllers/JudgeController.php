@@ -12,8 +12,8 @@ class JudgeController extends Controller
     {
         $validated = $request->validate([
             'competition_id' => 'required|integer|exists:competitions,id',
-            'judge_id'       => 'required|integer|exists:users,id',
-            'position'       => 'required|string|max:100', // например: "Главный судья", "Арбитр"
+            'judge_id'       => 'required|integer|exists:judges,id', // Проверяем по таблице judges
+            'position'       => 'required|string|max:100',
         ]);
 
         $assignment = JudgeAssignment::create($validated);

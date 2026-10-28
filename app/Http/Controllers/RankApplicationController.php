@@ -7,7 +7,7 @@ use App\Models\RankApplication;
 
 class RankApplicationController extends Controller
 {
-    // 1. Получить список заявок на разряды (с фильтрами по спортсмену или статусу)
+    // 1. Получить список заявок на разряды
     public function index(Request $request)
     {
         $query = RankApplication::query();
@@ -20,7 +20,7 @@ class RankApplicationController extends Controller
             $query->where('status', $request->status);
         }
 
-        $applications = $query->with(['athlete'])->get();
+        $applications = $query->with(['athlete', 'sportRank', 'discipline', 'competitionResult'])->get();
 
         return response()->json([
             'success' => true,
@@ -28,22 +28,25 @@ class RankApplicationController extends Controller
         ], 200);
     }
 
-    // 2. Подать заявку на присвоение спортивного разряда (Спортсмен / Тренер)
+    // 2. Подать заявку на присвоение спортивного разряда
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'athlete_id'       => 'required|integer|exists:athletes,id',
-            'rank_name'        => 'required|string|max:100', // например: "1 спортивный разряд", "КМС"
-            'competition_name' => 'nullable|string|max:255', // турнир, на котором выполнен нормативы
-            'document_url'     => 'nullable|string|max:255', // ссылка на протокол / подтверждающий документ
+            'athlete_id'            => 'required|integer|exists:athletes,id',
+            'sport_rank_id'         => 'required|integer|exists:sport_ranks,id',
+            'discipline_id'         => 'required|integer|exists:disciplines,id',
+            'competition_result_id' => 'required|integer|exists:competition_results,id',
+            'request_type'          => 'nullable|string|max:30',
         ]);
 
         $rankApp = RankApplication::create([
-            'athlete_id'       => $validated['athlete_id'],
-            'rank_name'        => $validated['rank_name'],
-            'competition_name' => $validated['competition_name'] ?? null,
-            'document_url'     => $validated['document_url'] ?? null,
-            'status'           => 'pending', // на рассмотрении
+            'athlete_id'            => $validated['athlete_id'],
+            'sport_rank_id'         => $validated['sport_rank_id'],
+            'discipline_id'         => $validated['discipline_id'],
+            'competition_result_id' => $validated['competition_result_id'],
+            'submitted_by_user_id'  => $request->user()->id,
+            'request_type'          => $validated['request_type'] ?? 'assignment',
+            'status'                => 'pending',
         ]);
 
         return response()->json([
@@ -53,7 +56,7 @@ class RankApplicationController extends Controller
         ], 201);
     }
 
-    // 3. Изменить статус заявки и указать номер приказа (Федерация)
+    // 3. Изменить статус заявки (Федерация)
     public function updateStatus(Request $request, $id)
     {
         $rankApp = RankApplication::find($id);
@@ -66,11 +69,16 @@ class RankApplicationController extends Controller
         }
 
         $validated = $request->validate([
-            'status'       => 'required|in:approved,rejected,pending',
-            'order_number' => 'nullable|string|max:100', // Номер приказа о присвоении разряда
+            'status'           => 'required|in:approved,rejected,pending',
+            'rejection_reason' => 'nullable|string',
         ]);
 
-        $rankApp->update($validated);
+        $rankApp->update([
+            'status'               => $validated['status'],
+            'rejection_reason'     => $validated['rejection_reason'] ?? null,
+            'reviewed_by_user_id'  => $request->user()->id,
+            'reviewed_at'          => now(),
+        ]);
 
         return response()->json([
             'success' => true,

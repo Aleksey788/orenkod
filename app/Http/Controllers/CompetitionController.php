@@ -50,14 +50,23 @@ class CompetitionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title'           => 'required|string|max:255',
-            'discipline_id'   => 'required|integer|exists:disciplines,id',
-            'format'          => 'required|in:очно,онлайн,смешанно',
-            'start_date'      => 'required|date',
-            'end_date'        => 'nullable|date|after_or_equal:start_date',
-            'venue'           => 'required|string|max:255',
-            'calendar_number' => 'nullable|string|max:100',
+            'title'                  => 'required|string|max:255',
+            'discipline_id'          => 'required|integer|exists:disciplines,id',
+            'competition_type_id'    => 'required|integer|exists:competition_types,id',
+            'age_group_id'           => 'required|integer|exists:age_groups,id',
+            'level'                  => 'required|string',
+            'format'                 => 'required|string',
+            'venue'                  => 'required|string',
+            'starts_at'              => 'required|date',
+            'ends_at'                => 'required|date|after_or_equal:starts_at',
+            'registration_starts_at' => 'nullable|date',
+            'registration_ends_at'   => 'nullable|date',
+            'calendar_plan'          => 'nullable|string',
+            'calendar_plan_number'   => 'nullable|string',
         ]);
+
+        $validated['created_by_user_id'] = $request->user()->id;
+        $validated['status'] = 'published';
 
         $competition = Competition::create($validated);
 
