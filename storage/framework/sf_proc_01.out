@@ -1,0 +1,80 @@
+ M app/Http/Resources/CompetitionResource.php
+ M app/Models/AuditLog.php
+ M app/Models/Competition.php
+ M app/Models/CompetitionResult.php
+ M app/Models/RatingSeason.php
+ M app/Models/RegionalTeam.php
+ M app/Models/RegionalTeamMember.php
+ M app/Models/SportRank.php
+ M app/Models/User.php
+ M app/Services/Competition/CompetitionApplicationService.php
+ M bootstrap/app.php
+ M config/filesystems.php
+ M database/factories/UserFactory.php
+ M database/seeders/DatabaseSeeder.php
+ M routes/web.php
+?? app/DTO/Competition/CompetitionResultDTO.php
+?? app/DTO/Competition/SaveCompetitionResultsDTO.php
+?? app/DTO/Rating/RatingFilterDTO.php
+?? app/DTO/Rating/RatingSeasonDTO.php
+?? app/DTO/RegionalTeam/RegionalTeamDTO.php
+?? app/Http/Controllers/AthleteRestrictionController.php
+?? app/Http/Controllers/CompetitionProtocolController.php
+?? app/Http/Controllers/CompetitionResultController.php
+?? app/Http/Controllers/RatingController.php
+?? app/Http/Controllers/RatingRuleController.php
+?? app/Http/Controllers/RatingSeasonController.php
+?? app/Http/Controllers/RegionalTeamController.php
+?? app/Http/Requests/Competition/SaveCompetitionResultsRequest.php
+?? app/Http/Requests/Rating/ClassifyCompetitionRequest.php
+?? app/Http/Requests/Rating/DecisionReasonRequest.php
+?? app/Http/Requests/Rating/RatingFilterRequest.php
+?? app/Http/Requests/Rating/SaveAthleteRestrictionRequest.php
+?? app/Http/Requests/Rating/SaveRatingRuleRequest.php
+?? app/Http/Requests/Rating/StoreRatingSeasonRequest.php
+?? app/Http/Requests/RegionalTeam/AddRegionalTeamMemberRequest.php
+?? app/Http/Requests/RegionalTeam/SaveRegionalTeamRequest.php
+?? app/Http/Resources/AthleteRestrictionResource.php
+?? app/Http/Resources/AthleteResultResource.php
+?? app/Http/Resources/CompetitionParticipantResource.php
+?? app/Http/Resources/CompetitionResultResource.php
+?? app/Http/Resources/RatingDetailResource.php
+?? app/Http/Resources/RatingResource.php
+?? app/Http/Resources/RatingRuleResource.php
+?? app/Http/Resources/RatingSeasonResource.php
+?? app/Http/Resources/RegionalTeamMemberResource.php
+?? app/Http/Resources/RegionalTeamResource.php
+?? app/Services/Competition/CompetitionProtocolService.php
+?? app/Services/Competition/CompetitionResultService.php
+?? app/Services/Rating/AthleteEligibilityService.php
+?? app/Services/Rating/AthleteRestrictionService.php
+?? app/Services/Rating/RatingCalculationService.php
+?? app/Services/Rating/RatingCategory.php
+?? app/Services/Rating/RatingRuleService.php
+?? app/Services/Rating/RatingSeasonService.php
+?? app/Services/RegionalTeam/RegionalTeamDocumentService.php
+?? app/Services/RegionalTeam/RegionalTeamService.php
+?? database/factories/AgeGroupFactory.php
+?? database/factories/AthleteFactory.php
+?? database/factories/AthleteRankFactory.php
+?? database/factories/AthleteRestrictionFactory.php
+?? database/factories/CompetitionApplicationFactory.php
+?? database/factories/CompetitionFactory.php
+?? database/factories/CompetitionResultFactory.php
+?? database/factories/CompetitionTypeFactory.php
+?? database/factories/DisciplineFactory.php
+?? database/factories/OrganizationFactory.php
+?? database/factories/RankApplicationFactory.php
+?? database/factories/RatingSeasonFactory.php
+?? database/factories/SportRankFactory.php
+?? database/migrations/2026_10_28_104834_add_results_publication_to_competitions_table.php
+?? database/migrations/2026_10_28_111207_extend_rating_and_regional_team_management.php
+?? database/seeders/RatingRuleSeeder.php
+?? resources/views/competitions/protocol.blade.php
+?? resources/views/regional-teams/order-draft.blade.php
+?? resources/views/regional-teams/team-list.blade.php
+?? routes/rating.php
+?? tests/Feature/CompetitionResultsTest.php
+?? tests/Feature/RatingAndRegionalTeamTest.php
+?? tests/RatingTestCase.php
+?? tests/Unit/RatingFormulaTest.php
