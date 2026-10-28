@@ -137,6 +137,9 @@
 const DB_VERSION = '12.0';
 const DB_KEY = 'fsp_database';
 
+const API_URL = 'http://127.0.0.1:8000/api';
+
+
 const INITIAL_DB = {
   // Спортсмены с согласиями
   athletes: [

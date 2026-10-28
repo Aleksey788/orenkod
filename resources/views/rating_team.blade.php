@@ -168,6 +168,7 @@
 const DB_VERSION = '7.0';
 const DB_KEY = 'fsp_database';
 const CURRENT_SEASON = '2026';
+const API_URL = 'http://127.0.0.1:8000/api';
 
 // Базовые баллы
 const POINTS_TABLE = {

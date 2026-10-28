@@ -1,21 +1,19 @@
 /* ============================================================
-   Регистрация + вход с паролем.
-   Хранение:
-     fsp_registered_users — [{ id, email, passwordHash, roles, ... }]
-     fsp_user            — текущая сессия { id: 'reg-<regId>-<role>' }
-   Хэш: SHA-256(salt + password), fallback — djb2.
+   Регистрация + вход с паролем (с интеграцией бэкенда Laravel).
    ============================================================ */
 (function () {
+  const API_URL     = 'http://127.0.0.1:8000/api';
   const REG_KEY     = 'fsp_registered_users';
   const SESSION_KEY = 'fsp_user';
+  const TOKEN_KEY   = 'fsp_auth_token'; // Ключ для токена Laravel Sanctum
   const PW_SALT     = 'fsp-salt-v1::';
   const PW_MIN      = 6;
 
   const CABINETS = {
-    athlete:    { url: 'athete_lk.html',         label: 'Спортсмен' },
-    coach:      { url: 'coach_lk.html',          label: 'Тренер' },
-    judge:      { url: 'judge_lk.html',          label: 'Судья' },
-    federation: { url: 'federation_member.html', label: 'Член Федерации' }
+    athlete:    { url: '/athlete',         label: 'Спортсмен' },
+    coach:      { url: '/coach',          label: 'Тренер' },
+    judge:      { url: '/judge',          label: 'Судья' },
+    federation: { url: '/federation', label: 'Член Федерации' }
   };
   const ROLE_PRIORITY = ['athlete', 'coach', 'judge', 'federation'];
 
@@ -37,7 +35,10 @@
   };
 
   const setSession   = (id) => localStorage.setItem(SESSION_KEY, JSON.stringify({ id }));
-  const clearSession = ()   => localStorage.removeItem(SESSION_KEY);
+  const clearSession = ()   => {
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+  };
   const getSession   = () => {
     try { return JSON.parse(localStorage.getItem(SESSION_KEY)); }
     catch (e) { return null; }
@@ -45,7 +46,6 @@
 
   const sessionIdFor = (regUser, role) => 'reg-' + regUser.id + '-' + role;
 
-  // Разбор активной сессии рег. пользователя (для баннера)
   const parseSession = () => {
     const s = getSession();
     if (!s || !s.id) return null;
@@ -80,7 +80,6 @@
           .map(b => b.toString(16).padStart(2, '0')).join('');
       } catch (e) { /* падать в fallback */ }
     }
-    // Fallback — детерминированный, не криптостойкий (для file:// и старых браузеров)
     let h = 5381;
     for (let i = 0; i < raw.length; i++) h = ((h << 5) + h) ^ raw.charCodeAt(i);
     return 'fb:' + (h >>> 0).toString(16);
@@ -97,7 +96,6 @@
   const pwIn      = document.getElementById('Password');
   const pw2In     = document.getElementById('PasswordConfirm');
 
-  /* ===================== БАННЕР СЕССИИ ===================== */
   const banner     = document.getElementById('sessionBanner');
   const bannerText = document.getElementById('sessionBannerText');
   const bannerGo   = document.getElementById('sessionGoBtn');
@@ -115,7 +113,6 @@
     bannerOut.onclick = () => { clearSession(); renderSessionBanner(); };
   }
 
-  /* ===================== РЕГИСТРАЦИЯ ===================== */
   if (mainRole) {
     mainRole.addEventListener('change', () => {
       if (mainRole.value === 'multiple') {
@@ -127,10 +124,10 @@
     });
   }
 
+  /* ===================== РЕГИСТРАЦИЯ С ОТПРАВКОЙ НА БЭКЕНД ===================== */
   if (form) form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    /* --- роли --- */
     let roles = [];
     if (mainRole.value === 'multiple') {
       roles = Array.from(document.querySelectorAll('.multi-role-cb:checked')).map(cb => cb.value);
@@ -147,7 +144,6 @@
       return;
     }
 
-    /* --- пароль --- */
     const password  = pwIn.value;
     const password2 = pw2In.value;
     if (password.length < PW_MIN) {
@@ -162,25 +158,62 @@
     }
 
     const email = emailIn.value.trim().toLowerCase();
+    const lastName   = document.getElementById('SecondName').value.trim();
+    const firstName  = document.getElementById('Name').value.trim();
+    const patronymic = document.getElementById('Patronymic').value.trim();
+    const birthdate  = document.getElementById('Birthdate').value;
 
-    /* --- существующий аккаунт → сразу открываем вход --- */
     const existing = findUserByEmail(email);
     if (existing) {
       openLogin(existing.email);
       return;
     }
 
-    /* --- новый пользователь --- */
+    // 1. Отправляем запрос на реальный бэкенд Laravel
+    // Карта соответствия строковых ролей из формы к ID ролей в базе данных Laravel
+    const roleMapping = {
+      athlete: 1,
+      coach: 2,
+      judge: 3,
+      federation: 4
+    };
+
+    // Если выбрано «несколько ролей», собираем их ID, иначе берем ID главной роли
+    let roleIdsArray = [];
+    if (mainRole.value === 'multiple') {
+      roleIdsArray = roles.map(r => roleMapping[r]).filter(Boolean);
+    } else {
+      roleIdsArray = [roleMapping[roles[0]] || 1];
+    }
+
+    // 1. Отправляем запрос на реальный бэкенд Laravel
+    try {
+      const response = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          name: `${lastName} ${firstName}`.trim(),
+          email: email,
+          password: password,
+          password_confirmation: password2,
+          role_ids: roleIdsArray // Передаем корректный массив ID ролей для бэкенда
+        })
+      });
+      
+      const resData = await response.json();
+      if (resData.token) {
+        localStorage.setItem(TOKEN_KEY, resData.token); // Сохраняем токен Sanctum
+      }
+    } catch (err) {
+      console.warn('Бэкенд недоступен, работаем через localStorage:', err);
+    }
+
+    // 2. Сохраняем локально для бесперебойной работы интерфейса
     const passwordHash = await hashPassword(password);
     const newUser = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      lastName:   document.getElementById('SecondName').value.trim(),
-      firstName:  document.getElementById('Name').value.trim(),
-      patronymic: document.getElementById('Patronymic').value.trim(),
-      email,
-      passwordHash,
-      birthdate:  document.getElementById('Birthdate').value,
-      roles,
+      lastName, firstName, patronymic,
+      email, passwordHash, birthdate, roles,
       registeredAt: new Date().toISOString()
     };
 
@@ -203,7 +236,7 @@
     }
   });
 
-  /* ===================== ВХОД ===================== */
+  /* ===================== ВХОД С БЭКЕНДОМ ===================== */
   const loginOverlay   = document.getElementById('loginOverlay');
   const loginEmail     = document.getElementById('loginEmail');
   const loginPassword  = document.getElementById('loginPassword');
@@ -274,6 +307,22 @@
     if (!email)    { showError('Введите email.'); return; }
     if (!password) { showError('Введите пароль.'); return; }
 
+    // Пробуем авторизоваться через реальный API Laravel
+    try {
+      const res = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (data.token) {
+        localStorage.setItem(TOKEN_KEY, data.token);
+      }
+    } catch (e) {
+      console.warn('Сервер недоступен, проверяем локально');
+    }
+
+    // Проверка локального пользователя
     const user = findUserByEmail(email);
     if (!user) {
       showError('Аккаунт с таким email не найден. Зарегистрируйтесь.');
@@ -284,10 +333,7 @@
       return;
     }
 
-    /* --- пароль --- */
     if (!user.passwordHash) {
-      // Legacy-аккаунт (зарегистрирован до появления паролей):
-      // введённый пароль сохраняем и используем как основной.
       if (password.length < PW_MIN) {
         showHint('Аккаунт без пароля. Придумайте пароль не короче ' + PW_MIN + ' символов и нажмите «Войти».');
         return;
@@ -329,6 +375,5 @@
     });
   }
 
-  /* ===================== СТАРТ ===================== */
   renderSessionBanner();
 })();

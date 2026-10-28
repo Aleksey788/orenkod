@@ -175,6 +175,8 @@
         </div>
     </div>
 
-    <script src="{{ asset('js/Registr.js') }}"></script>
+    <script src="{{ asset('js/Registr.js') }}";
+    const API_URL = 'http://127.0.0.1:8000/api';
+    ></script>
 </body>
 </html>

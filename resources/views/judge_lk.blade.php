@@ -114,6 +114,8 @@
 const DB_VERSION = '5.1'; // Обновлено для добавления Email
 const DB_KEY = 'fsp_database';
 const SESSION_KEY = 'fsp_user';
+const API_URL = 'http://127.0.0.1:8000/api';
+
 
 const INITIAL_DB = {
   athletes: [

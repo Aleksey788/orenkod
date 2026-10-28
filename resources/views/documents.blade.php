@@ -169,6 +169,8 @@
 /* ================= БАЗА ДАННЫХ ================= */
 const DB_VERSION = '11.0'; 
 const DB_KEY = 'fsp_database';
+const API_URL = 'http://127.0.0.1:8000/api';
+
 
 const INITIAL_DB = {
   athletes: [

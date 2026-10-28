@@ -155,6 +155,8 @@ const STATE = {
   channels: { inapp: true, email: false, telegram: false, max: false },
   notifications: []
 };
+const API_URL = 'http://127.0.0.1:8000/api';
+
 
 /* ================= УТИЛИТЫ ================= */
 function getTimeNow() {

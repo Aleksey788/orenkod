@@ -32,12 +32,13 @@ class ApplicationController extends Controller
         ], 200);
     }
 
-    // 2. Подать заявку на соревнование (Спортсмен)
+    // 2. Подать заявку на соревнование
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'competition_id' => 'required|integer|exists:competitions,id',
-            'athlete_id'     => 'required|integer|exists:athletes,id',
+            'competition_id'       => 'required|integer|exists:competitions,id',
+            'athlete_id'           => 'required|integer|exists:athletes,id',
+            'submitted_by_user_id' => 'nullable|integer|exists:users,id',
         ]);
 
         // Проверяем, не подавал ли этот спортсмен заявку на этот же турнир ранее
@@ -52,10 +53,21 @@ class ApplicationController extends Controller
             ], 422);
         }
 
+        // Определяем, кто подал заявку (авторизованный юзер через токен или переданный ID)
+        $userId = auth()->id() ?? $validated['submitted_by_user_id'] ?? $request->input('user_id');
+
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Не указан ID пользователя, подающего заявку (submitted_by_user_id).'
+            ], 422);
+        }
+
         $application = Application::create([
-            'competition_id' => $validated['competition_id'],
-            'athlete_id'     => $validated['athlete_id'],
-            'status'         => 'pending', // Статус по умолчанию: на рассмотрении
+            'competition_id'       => $validated['competition_id'],
+            'athlete_id'           => $validated['athlete_id'],
+            'submitted_by_user_id' => $userId,
+            'status'               => 'pending', // Статус по умолчанию: на рассмотрении
         ]);
 
         return response()->json([
@@ -82,7 +94,9 @@ class ApplicationController extends Controller
         ]);
 
         $application->update([
-            'status' => $validated['status']
+            'status'              => $validated['status'],
+            'reviewed_by_user_id' => auth()->id() ?? null,
+            'reviewed_at'         => now(),
         ]);
 
         return response()->json([
