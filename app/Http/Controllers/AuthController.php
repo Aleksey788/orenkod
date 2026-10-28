@@ -73,4 +73,12 @@ class AuthController extends Controller
             'user'    => $user
         ], 200);
     }
+
+    public function me(\Illuminate\Http\Request $request)
+    {
+        return response()->json([
+            'success' => true,
+            'user' => $request->user()
+        ]);
+    }
 }
