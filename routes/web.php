@@ -9,6 +9,7 @@ use App\Http\Controllers\CompetitionResultController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\OrganizationController;
 
 // Маршруты для гостей
 
@@ -295,3 +296,45 @@ Route::get('/athlete/results', [CompetitionResultController::class, 'athleteInde
     ->middleware(['auth', 'verified', 'role:athlete'])->name('athlete.results');
 
 require __DIR__.'/rating.php';
+
+// =====================================
+// Организации: публичный справочник
+// =====================================
+
+Route::get('/organizations', [
+    OrganizationController::class,
+    'index',
+]);
+
+Route::get('/organizations/{organization}', [
+    OrganizationController::class,
+    'show',
+]);
+
+
+// =====================================
+// Организации: управление
+// =====================================
+
+Route::middleware([
+    'auth',
+    'verified',
+    'role:admin',
+])->prefix('admin')->group(function () {
+
+    Route::post('/organizations', [
+        OrganizationController::class,
+        'store',
+    ]);
+
+    Route::patch('/organizations/{organization}', [
+        OrganizationController::class,
+        'update',
+    ]);
+
+    Route::delete('/organizations/{organization}', [
+        OrganizationController::class,
+        'destroy',
+    ]);
+
+});
