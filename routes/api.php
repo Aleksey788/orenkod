@@ -12,6 +12,7 @@ use App\Http\Controllers\JudgeController;
 use App\Http\Controllers\ResultController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\AthleteController;
+use App\Http\Controllers\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,4 +80,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::post('/results', [ResultController::class, 'storeOrUpdate']);
     Route::get('/leaderboard', [ResultController::class, 'getLeaderboard']);
+    // Реестр занимающихся и статистика
+    Route::get('/reports/athletes-registry', [ReportController::class, 'athletesRegistry']);
 });
