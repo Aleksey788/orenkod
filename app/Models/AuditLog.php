@@ -11,10 +11,10 @@ class AuditLog extends Model
     /** @param array<string, mixed>|null $oldValues
      * @param  array<string, mixed>|null  $newValues
      */
-    public static function recordAction(Model $subject, int $userId, string $event, ?array $oldValues = null, ?array $newValues = null): self
+    public static function recordAction(Model $subject, int $userId, string $event, ?array $oldValues = null, ?array $newValues = null, string $activeRole = 'admin'): self
     {
         return self::create([
-            'user_id' => $userId, 'active_role' => 'admin', 'event' => $event,
+            'user_id' => $userId, 'active_role' => $activeRole, 'event' => $event,
             'subject_type' => $subject->getMorphClass(), 'subject_id' => $subject->getKey(),
             'old_values' => $oldValues, 'new_values' => $newValues,
         ]);

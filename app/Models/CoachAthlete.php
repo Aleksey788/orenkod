@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\Pivot;
+
 class CoachAthlete extends Pivot
 {
     protected $table = 'coach_athlete';
@@ -31,6 +32,16 @@ class CoachAthlete extends Pivot
     public function discipline(): BelongsTo
     {
         return $this->belongsTo(Discipline::class);
+    }
+
+    public function coach(): BelongsTo
+    {
+        return $this->belongsTo(Coach::class);
+    }
+
+    public function athlete(): BelongsTo
+    {
+        return $this->belongsTo(Athlete::class);
     }
 
     public function history(): HasMany

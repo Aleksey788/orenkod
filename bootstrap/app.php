@@ -28,6 +28,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 'competitions.results', 'competitions.protocol', 'athlete.results',
                 'ratings.*', 'athlete.rating', 'regional-teams.*', 'admin.rating*',
                 'admin.athlete-restrictions.*', 'admin.regional-teams.*',
+                'admin.athletes.*', 'admin.coach-links.*', 'admin.rank-applications.*', 'admin.judges.*', 'admin.reports.*',
+                'admin.organizations.*', 'organizations.*', 'athlete.profile.*', 'athlete.coach-links.*',
+                'athlete.rank-applications.*', 'coach.athletes.*', 'coach.links.*', 'coach.rank-applications.*',
+                'judge.assignments.*', 'competitions.judges',
             ) || $exception instanceof ValidationException || $exception instanceof AuthenticationException) {
                 return null;
             }

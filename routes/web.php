@@ -6,10 +6,10 @@ use App\Http\Controllers\CompetitionApplicationController;
 use App\Http\Controllers\CompetitionController;
 use App\Http\Controllers\CompetitionProtocolController;
 use App\Http\Controllers\CompetitionResultController;
+use App\Http\Controllers\OrganizationController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\OrganizationController;
 
 // Маршруты для гостей
 
@@ -304,13 +304,12 @@ require __DIR__.'/rating.php';
 Route::get('/organizations', [
     OrganizationController::class,
     'index',
-]);
+])->name('organizations.index');
 
 Route::get('/organizations/{organization}', [
     OrganizationController::class,
     'show',
-]);
-
+])->name('organizations.show');
 
 // =====================================
 // Организации: управление
@@ -325,16 +324,18 @@ Route::middleware([
     Route::post('/organizations', [
         OrganizationController::class,
         'store',
-    ]);
+    ])->name('admin.organizations.store');
 
     Route::patch('/organizations/{organization}', [
         OrganizationController::class,
         'update',
-    ]);
+    ])->name('admin.organizations.update');
 
     Route::delete('/organizations/{organization}', [
         OrganizationController::class,
         'destroy',
-    ]);
+    ])->name('admin.organizations.destroy');
 
 });
+
+require __DIR__.'/registry.php';

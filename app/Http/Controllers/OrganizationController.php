@@ -7,11 +7,10 @@ use App\Http\Requests\Organization\UpdateOrganizationRequest;
 use App\Http\Resources\OrganizationResource;
 use App\Models\Organization;
 use App\Services\OrganizationService;
-
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 
 class OrganizationController extends Controller
 {
@@ -58,8 +57,8 @@ class OrganizationController extends Controller
         $query = Organization::query();
 
         // Поиск по названию и муниципалитету
-        if (!empty($filters['search'])) {
-            $search = '%' . trim($filters['search']) . '%';
+        if (! empty($filters['search'])) {
+            $search = '%'.trim($filters['search']).'%';
 
             $query->where(function ($q) use ($search) {
                 $q->whereRaw(
@@ -73,12 +72,12 @@ class OrganizationController extends Controller
         }
 
         // Фильтр по типу организации
-        if (!empty($filters['type'])) {
+        if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
         }
 
         // Фильтр по муниципалитету
-        if (!empty($filters['municipality'])) {
+        if (! empty($filters['municipality'])) {
             $query->where(
                 'municipality',
                 $filters['municipality']
@@ -114,7 +113,8 @@ class OrganizationController extends Controller
         StoreOrganizationRequest $request
     ): JsonResponse {
         $organization = $this->service->create(
-            $request->validated()
+            $request->validated(),
+            $request->user()->id
         );
 
         return (new OrganizationResource($organization))
@@ -131,7 +131,8 @@ class OrganizationController extends Controller
     ): OrganizationResource {
         $organization = $this->service->update(
             $organization,
-            $request->validated()
+            $request->validated(),
+            $request->user()->id
         );
 
         return new OrganizationResource(
@@ -143,10 +144,12 @@ class OrganizationController extends Controller
      * Удаление организации.
      */
     public function destroy(
+        Request $request,
         Organization $organization
     ): Response {
         $this->service->delete(
-            $organization
+            $organization,
+            $request->user()->id
         );
 
         return response()->noContent();
