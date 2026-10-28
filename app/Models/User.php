@@ -2,31 +2,65 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $table = 'users';
+
+    protected $fillable = [
+        'first_name',
+        'last_name',
+        'middle_name',
+        'email',
+        'phone',
+        'password',
+        'is_active',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'is_active' => 'boolean',
+    ];
+
+    // --- Метод для генерации токена без установки Sanctum ---
+    public function createToken(string $name)
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        $token = new \stdClass();
+        // Вшиваем ID пользователя прямо в токен (например: orenkod_token_4_abcdef...)
+        $token->plainTextToken = 'orenkod_token_' . $this->id . '_' . bin2hex(random_bytes(20));
+        return $token;
+    }
+
+    // --- Связи с ролями и профилями ---
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'role_user');
+    }
+
+    public function athlete()
+    {
+        return $this->hasOne(Athlete::class);
+    }
+
+    public function coach()
+    {
+        return $this->hasOne(Coach::class);
+    }
+
+    public function judge()
+    {
+        return $this->hasOne(Judge::class);
     }
 }
