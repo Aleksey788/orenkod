@@ -20,6 +20,8 @@ class RegionalTeamMember extends Model
     {
         return [
             'included_at' => 'date',
+            'rating_snapshot' => 'array',
+            'removed_at' => 'datetime',
         ];
     }
 

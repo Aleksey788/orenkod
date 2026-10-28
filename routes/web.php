@@ -1,13 +1,15 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\PasswordResetController;
-use App\Http\Controllers\CompetitionController;
 use App\Http\Controllers\CompetitionApplicationController;
+use App\Http\Controllers\CompetitionController;
+use App\Http\Controllers\CompetitionProtocolController;
+use App\Http\Controllers\CompetitionResultController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
 // Маршруты для гостей
 
 Route::get('/', function () {
@@ -27,17 +29,17 @@ Route::middleware('guest')->group(function () {
     })->name('login');
 
     Route::post('/register', [
-        AuthController::class, 'register'
+        AuthController::class, 'register',
     ])->middleware('throttle:5,1');
 
     Route::post('/login', [
-        AuthController::class, 'login'
+        AuthController::class, 'login',
     ])->middleware('throttle:5,1');
 
     Route::post('/forgot-password', [
-        PasswordResetController::class, 'sendLink'
+        PasswordResetController::class, 'sendLink',
     ])->middleware('throttle:3,1')
-      ->name('password.email');
+        ->name('password.email');
 
     Route::get('/reset-password/{token}', function (string $token) {
         return response()->json([
@@ -46,28 +48,25 @@ Route::middleware('guest')->group(function () {
     })->name('password.reset');
 
     Route::post('/reset-password', [
-        PasswordResetController::class, 'reset'
+        PasswordResetController::class, 'reset',
     ])->middleware('throttle:5,1')
-      ->name('password.update');
+        ->name('password.update');
 });
 
-
-
 // Маршруты авторизованных пользователей
-
 
 Route::middleware('auth')->group(function () {
 
     Route::get('/me', [
-        AuthController::class, 'me'
+        AuthController::class, 'me',
     ]);
 
     Route::post('/logout', [
-        AuthController::class, 'logout'
+        AuthController::class, 'logout',
     ]);
 
     Route::post('/switch-role', [
-        AuthController::class, 'switchRole'
+        AuthController::class, 'switchRole',
     ]);
 
     // Подтверждение электронной почты
@@ -89,12 +88,12 @@ Route::middleware('auth')->group(function () {
 
         }
     )->middleware(['signed', 'throttle:6,1'])
-     ->name('verification.verify');
+        ->name('verification.verify');
 
     Route::post('/email/verification-notification',
         function (Request $request) {
 
-            if (!$request->user()->hasVerifiedEmail()) {
+            if (! $request->user()->hasVerifiedEmail()) {
                 $request->user()
                     ->sendEmailVerificationNotification();
             }
@@ -105,8 +104,7 @@ Route::middleware('auth')->group(function () {
 
         }
     )->middleware('throttle:6,1')
-     ->name('verification.send');
-
+        ->name('verification.send');
 
     // Личные кабинеты
 
@@ -158,7 +156,6 @@ Route::get('/competitions/{competition}', [
     CompetitionController::class,
     'show',
 ]);
-
 
 // Управление соревнованиями: только администратор
 
@@ -221,7 +218,6 @@ Route::middleware([
     );
 });
 
-
 // ============================================
 // ЗАЯВКИ ТРЕНЕРОВ
 // ============================================
@@ -248,7 +244,6 @@ Route::middleware([
         ]
     );
 });
-
 
 // ============================================
 // МОДЕРАЦИЯ ЗАЯВОК АДМИНИСТРАТОРОМ
@@ -284,3 +279,19 @@ Route::middleware([
         ]
     );
 });
+
+Route::middleware(['auth', 'verified', 'role:admin'])
+    ->prefix('admin/competitions/{competition}')->group(function () {
+        Route::get('/participants', [CompetitionResultController::class, 'participants'])->name('admin.competitions.participants');
+        Route::get('/results', [CompetitionResultController::class, 'index'])->name('admin.competitions.results');
+        Route::put('/results', [CompetitionResultController::class, 'update'])->name('admin.competitions.results.update');
+        Route::post('/results/publish', [CompetitionResultController::class, 'publish'])->name('admin.competitions.results.publish');
+        Route::get('/protocol', [CompetitionProtocolController::class, 'preview'])->name('admin.competitions.protocol');
+    });
+
+Route::get('/competitions/{competition}/results', [CompetitionResultController::class, 'publicIndex'])->name('competitions.results');
+Route::get('/competitions/{competition}/protocol', [CompetitionProtocolController::class, 'download'])->name('competitions.protocol');
+Route::get('/athlete/results', [CompetitionResultController::class, 'athleteIndex'])
+    ->middleware(['auth', 'verified', 'role:athlete'])->name('athlete.results');
+
+require __DIR__.'/rating.php';

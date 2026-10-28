@@ -14,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 
 class CompetitionApplicationService
 {
+    public function __construct(private CompetitionResultService $results) {}
+
     /**
      * Подача заявки спортсменом или тренером.
      */
@@ -38,11 +40,12 @@ class CompetitionApplicationService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            $this->results->ensureUnpublished($competition);
+
             // 1. Соревнование должно быть опубликовано
             if ($competition->status !== 'published') {
                 throw ValidationException::withMessages([
-                    'competition' =>
-                        'Соревнование не опубликовано',
+                    'competition' => 'Соревнование не опубликовано',
                 ]);
             }
 
@@ -54,8 +57,7 @@ class CompetitionApplicationService
                 $now->gt($competition->registration_ends_at)
             ) {
                 throw ValidationException::withMessages([
-                    'registration' =>
-                        'Приём заявок на соревнование закрыт',
+                    'registration' => 'Приём заявок на соревнование закрыт',
                 ]);
             }
 
@@ -67,10 +69,9 @@ class CompetitionApplicationService
                 )
                 ->exists();
 
-            if (!$hasDiscipline) {
+            if (! $hasDiscipline) {
                 throw ValidationException::withMessages([
-                    'discipline' =>
-                        'Спортсмен не занимается этой дисциплиной',
+                    'discipline' => 'Спортсмен не занимается этой дисциплиной',
                 ]);
             }
 
@@ -89,8 +90,7 @@ class CompetitionApplicationService
                     $age > $ageGroup->max_age)
             ) {
                 throw ValidationException::withMessages([
-                    'age' =>
-                        'Спортсмен не подходит по возрастной группе',
+                    'age' => 'Спортсмен не подходит по возрастной группе',
                 ]);
             }
 
@@ -113,7 +113,7 @@ class CompetitionApplicationService
                     ->whereNotNull('confirmed_at')
                     ->exists();
 
-                if (!$hasConnection) {
+                if (! $hasConnection) {
                     abort(
                         403,
                         'Нет подтверждённой связи со спортсменом'
@@ -134,8 +134,7 @@ class CompetitionApplicationService
 
             if ($alreadyExists) {
                 throw ValidationException::withMessages([
-                    'application' =>
-                        'Заявка на это соревнование уже существует',
+                    'application' => 'Заявка на это соревнование уже существует',
                 ]);
             }
 
@@ -163,6 +162,12 @@ class CompetitionApplicationService
             $dto
         ) {
 
+            $competition = Competition::query()
+                ->whereKey($application->competition_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+            $this->results->ensureUnpublished($competition);
+
             $application = CompetitionApplication::query()
                 ->whereKey($application->id)
                 ->lockForUpdate()
@@ -171,8 +176,7 @@ class CompetitionApplicationService
             // Рассматриваем только новые заявки
             if ($application->status !== 'pending') {
                 throw ValidationException::withMessages([
-                    'status' =>
-                        'Эта заявка уже рассмотрена',
+                    'status' => 'Эта заявка уже рассмотрена',
                 ]);
             }
 

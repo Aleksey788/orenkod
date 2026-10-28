@@ -30,6 +30,22 @@ return [
 
     'disks' => [
 
+        'team_documents' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/team-documents'),
+            'visibility' => 'private',
+            'serve' => false,
+            'throw' => true,
+        ],
+
+        'protocols' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/protocols'),
+            'visibility' => 'private',
+            'serve' => false,
+            'throw' => true,
+        ],
+
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),

@@ -8,6 +8,18 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class AuditLog extends Model
 {
+    /** @param array<string, mixed>|null $oldValues
+     * @param  array<string, mixed>|null  $newValues
+     */
+    public static function recordAction(Model $subject, int $userId, string $event, ?array $oldValues = null, ?array $newValues = null): self
+    {
+        return self::create([
+            'user_id' => $userId, 'active_role' => 'admin', 'event' => $event,
+            'subject_type' => $subject->getMorphClass(), 'subject_id' => $subject->getKey(),
+            'old_values' => $oldValues, 'new_values' => $newValues,
+        ]);
+    }
+
     protected $table = 'audit_logs';
 
     public $timestamps = false;

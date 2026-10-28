@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use Notifiable;
+    use HasFactory, Notifiable;
 
     protected $fillable = [
         'first_name',
@@ -43,12 +45,12 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withPivot('id');
     }
 
-    public function coach(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function coach(): HasOne
     {
         return $this->hasOne(Coach::class);
     }
 
-    public function judge(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function judge(): HasOne
     {
         return $this->hasOne(Judge::class);
     }
@@ -71,10 +73,8 @@ class User extends Authenticatable implements MustVerifyEmail
         );
     }
 
-    public function athlete(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function athlete(): HasOne
     {
         return $this->hasOne(Athlete::class);
     }
-
-
 }

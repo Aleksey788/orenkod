@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CompetitionResult extends Model
 {
+    public const STATUSES = ['finished', 'dns', 'dnf', 'dsq'];
+
+    protected $attributes = ['status' => 'finished'];
+
     protected $table = 'competition_results';
 
     protected $fillable = [

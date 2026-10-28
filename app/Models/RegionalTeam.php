@@ -19,12 +19,16 @@ class RegionalTeam extends Model
         'order_date',
         'order_path',
         'created_by_user_id',
+        'name',
+        'min_sport_rank_id',
     ];
 
     protected function casts(): array
     {
         return [
             'order_date' => 'date',
+            'published_at' => 'datetime',
+            'version' => 'integer',
         ];
     }
 
@@ -54,5 +58,10 @@ class RegionalTeam extends Model
     public function members(): HasMany
     {
         return $this->hasMany(RegionalTeamMember::class);
+    }
+
+    public function supersedes(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'supersedes_team_id');
     }
 }
