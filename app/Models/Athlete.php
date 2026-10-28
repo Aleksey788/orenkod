@@ -90,4 +90,6 @@ class Athlete extends Model
     {
         return $this->hasMany(RegionalTeamMember::class);
     }
+
+    
 }

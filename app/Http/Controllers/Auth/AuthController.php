@@ -11,6 +11,7 @@ use App\DTO\Auth\LoginDTO;
 use App\Services\Auth\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Auth\Events\Registered;
 
 class AuthController extends Controller
 {
@@ -19,25 +20,31 @@ class AuthController extends Controller
     ) {}
 
     public function register(RegisterRequest $request)
-    {
-        $dto = RegisterDTO::fromArray(
-            $request->validated()
-        );
+{
+    $dto = RegisterDTO::fromArray(
+        $request->validated()
+    );
 
-        $user = $this->authService->register(
-            $dto,
-            $request->ip()
-        );
+    $user = $this->authService->register(
+        $dto,
+        $request->ip()
+    );
 
-        Auth::login($user);
+    Auth::login($user);
 
-        $request->session()->regenerate();
-        $request->session()->put('active_role', 'athlete');
+    $request->session()->regenerate();
 
-        return (new UserResource($user->load('roles')))
-            ->response()
-            ->setStatusCode(201);
-    }
+    $request->session()->put(
+        'active_role',
+        'athlete'
+    );
+
+    event(new Registered($user));
+
+    return (new UserResource($user->load('roles')))
+        ->response()
+        ->setStatusCode(201);
+}
 
     public function login(LoginRequest $request)
     {

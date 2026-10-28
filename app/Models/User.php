@@ -6,8 +6,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use Notifiable;
 
@@ -69,4 +70,11 @@ class User extends Authenticatable
             'created_by_user_id'
         );
     }
+
+    public function athlete(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Athlete::class);
+    }
+
+
 }
